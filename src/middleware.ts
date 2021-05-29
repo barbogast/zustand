@@ -274,7 +274,9 @@ export const persist = <S extends State>(
       }
     }
   }
-  // rehydrate initial state with existing stored state
+
+  let stateFromStorage
+    // rehydrate initial state with existing stored state
   ;(() => {
     const postRehydrationCallback = onRehydrateStorage?.(get()) || undefined
 
@@ -290,14 +292,15 @@ export const persist = <S extends State>(
       .then((deserializedStorageValue) => {
         if (deserializedStorageValue) {
           if (deserializedStorageValue.version !== version) {
-            return makeThenable(
-              migrate?.(
-                deserializedStorageValue.state,
-                deserializedStorageValue.version
-              )
+            stateFromStorage = migrate?.(
+              deserializedStorageValue.state,
+              deserializedStorageValue.version
             )
+
+            return makeThenable(stateFromStorage)
           } else {
-            set(deserializedStorageValue.state)
+            stateFromStorage = deserializedStorageValue.state
+            set(stateFromStorage)
             return makeThenable(null)
           }
         } else {
@@ -322,7 +325,7 @@ export const persist = <S extends State>(
       })
   })()
 
-  return config(
+  const configRes = config(
     (...args) => {
       set(...args)
       void setItem()
@@ -330,4 +333,6 @@ export const persist = <S extends State>(
     get,
     api
   )
+  const mergedRes = { ...configRes, ...(stateFromStorage || {}) }
+  return mergedRes
 }
