@@ -280,49 +280,53 @@ export const persist = <S extends State>(
   ;(() => {
     const postRehydrationCallback = onRehydrateStorage?.(get()) || undefined
 
-    let storageValuePending = makeThenable(storage.getItem(name))
-    storageValuePending
-      .then((storageValue) => {
-        if (storageValue) {
-          return makeThenable(deserialize(storageValue))
-        } else {
-          return makeThenable(null)
-        }
-      })
-      .then((deserializedStorageValue) => {
-        if (deserializedStorageValue) {
-          if (deserializedStorageValue.version !== version) {
-            stateFromStorage = migrate?.(
-              deserializedStorageValue.state,
-              deserializedStorageValue.version
-            )
-
-            return makeThenable(stateFromStorage)
+    try {
+      let storageValuePending = makeThenable(storage.getItem(name))
+      storageValuePending
+        .then((storageValue) => {
+          if (storageValue) {
+            return makeThenable(deserialize(storageValue))
           } else {
-            stateFromStorage = deserializedStorageValue.state
-            set(stateFromStorage)
             return makeThenable(null)
           }
-        } else {
+        })
+        .then((deserializedStorageValue) => {
+          if (deserializedStorageValue) {
+            if (deserializedStorageValue.version !== version) {
+              stateFromStorage = migrate?.(
+                deserializedStorageValue.state,
+                deserializedStorageValue.version
+              )
+
+              return makeThenable(stateFromStorage)
+            } else {
+              stateFromStorage = deserializedStorageValue.state
+              set(stateFromStorage)
+              return makeThenable(null)
+            }
+          } else {
+            return makeThenable(null)
+          }
+        })
+        .then((migratedState) => {
+          if (migratedState) {
+            set(migratedState)
+            return makeThenable(setItem())
+          } else {
+            return makeThenable(null)
+          }
+        })
+        .then(() => {
+          postRehydrationCallback?.(get(), undefined)
           return makeThenable(null)
-        }
-      })
-      .then((migratedState) => {
-        if (migratedState) {
-          set(migratedState)
-          return makeThenable(setItem())
-        } else {
-          return makeThenable(null)
-        }
-      })
-      .then(() => {
-        postRehydrationCallback?.(get(), undefined)
-        return makeThenable(null)
-      })
-      // this handler will only catch promise related errors
-      .catch((e) => {
-        postRehydrationCallback?.(undefined, e)
-      })
+        })
+        // this handler will only catch promise related errors
+        .catch((e) => {
+          postRehydrationCallback?.(undefined, e)
+        })
+    } catch (e) {
+      postRehydrationCallback?.(undefined, e)
+    }
   })()
 
   const configRes = config(
