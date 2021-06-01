@@ -312,23 +312,20 @@ export const persist = <S extends State>(
     })
     .then((deserializedStorageValue) => {
       if (deserializedStorageValue) {
-        if (deserializedStorageValue.version !== version) {
-          if (migrate) {
-            stateFromStorageInSync = migrate(
-              deserializedStorageValue.state,
-              deserializedStorageValue.version
-            )
-            return stateFromStorageInSync
-          }
+        if (deserializedStorageValue.version !== version && migrate) {
+          return migrate(
+            deserializedStorageValue.state,
+            deserializedStorageValue.version
+          )
         } else {
-          stateFromStorageInSync = deserializedStorageValue.state
-          set(deserializedStorageValue.state)
+          return deserializedStorageValue.state
         }
       }
     })
-    .then((migratedState) => {
-      if (migratedState) {
-        set(migratedState as PartialState<S, keyof S>)
+    .then((processedStorageValue) => {
+      if (processedStorageValue) {
+        stateFromStorageInSync = processedStorageValue
+        set(processedStorageValue as PartialState<S, keyof S>)
         return setItem()
       }
     })
