@@ -269,7 +269,9 @@ export const persist = <S extends State>(
     )
   }
 
-  const setItem = (): Promise<void> | void => {
+  const thenableSerialize = toThenable(serialize)
+
+  const setItem = (): Thenable<void> | void => {
     const state = { ...get() }
 
     if (whitelist) {
@@ -281,11 +283,15 @@ export const persist = <S extends State>(
       blacklist.forEach((key) => delete state[key])
     }
 
-    if (storage) {
-      toThenable(serialize)({ state, version }).then((serializedValue) => {
-        storage?.setItem(name, serializedValue)
-      })
-    }
+    return thenableSerialize({ state, version }).then((serializedValue) => {
+      if (storage) {
+        storage.setItem(name, serializedValue)
+      } else {
+        console.warn(
+          `Persist middleware: unable to update ${name}, the given storage is currently unavailable.`
+        )
+      }
+    })
   }
 
   const savedSetState = api.setState
