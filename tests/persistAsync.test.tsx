@@ -1,7 +1,15 @@
 import React from 'react'
 import { act, cleanup, render } from '@testing-library/react'
-import create from '../src/index'
+import create, { UseStore } from '../src/index'
 import { persist } from '../src/middleware'
+
+const getComponent = (useStore: UseStore<{ count: number }>) => {
+  const Counter = () => {
+    const { count } = useStore()
+    return <div>count: {count}</div>
+  }
+  return Counter
+}
 
 describe('persist middleware with async configuration', () => {
   const consoleError = console.error
@@ -71,11 +79,7 @@ describe('persist middleware with async configuration', () => {
       })
     )
 
-    function Counter() {
-      const { count } = useStore()
-      return <div>count: {count}</div>
-    }
-
+    const Counter = getComponent(useStore)
     const { findByText } = render(<Counter />)
 
     await findByText('count: 0')
@@ -102,11 +106,7 @@ describe('persist middleware with async configuration', () => {
       })
     )
 
-    function Counter() {
-      const { count } = useStore()
-      return <div>count: {count}</div>
-    }
-
+    const Counter = getComponent(useStore)
     const { findByText } = render(<Counter />)
 
     await findByText('count: 0')
@@ -144,11 +144,7 @@ describe('persist middleware with async configuration', () => {
       })
     )
 
-    function Counter() {
-      const { count } = useStore()
-      return <div>count: {count}</div>
-    }
-
+    const Counter = getComponent(useStore)
     const { findByText } = render(<Counter />)
 
     await findByText('count: 0')
@@ -185,11 +181,7 @@ describe('persist middleware with async configuration', () => {
       })
     )
 
-    function Counter() {
-      const { count } = useStore()
-      return <div>count: {count}</div>
-    }
-
+    const Counter = getComponent(useStore)
     const { findByText } = render(<Counter />)
 
     await findByText('count: 0')
@@ -222,11 +214,7 @@ describe('persist middleware with async configuration', () => {
       })
     )
 
-    function Counter() {
-      const { count } = useStore()
-      return <div>count: {count}</div>
-    }
-
+    const Counter = getComponent(useStore)
     const { findByText } = render(<Counter />)
 
     await findByText('count: 0')
